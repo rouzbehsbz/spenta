@@ -7,14 +7,13 @@ import (
 )
 
 func main() {
-	arr := []int{3, 4, 5}
+	arr := []int{1, 2, 3, 4, 5, 6}
 
-	parIter := spenta.SliceParMap(&arr, func(e int) int {
-		return e * 2
+	parIter := spenta.SliceParFilter(&arr, func(e int) bool {
+		return e%2 == 0
 	})
 
 	parIter.Done()
 
 	fmt.Println(arr)
-	println("done ", parIter.Chunks)
 }

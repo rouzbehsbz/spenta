@@ -1,6 +1,10 @@
-package internal
+package pool
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/rouzbehsbz/spenta/internal/share"
+)
 
 type Job struct {
 	task  func()
@@ -11,7 +15,7 @@ func NewSliceJobs(len, chunkCount, chunkSize int, wg *sync.WaitGroup, cb func(i 
 	jobs := make([]Job, 0, chunkCount)
 
 	for chunk := range chunkCount {
-		start, end := ChunkIndexes(chunk, len, chunkSize)
+		start, end := share.ChunkIndexes(chunk, len, chunkSize)
 
 		jobs = append(jobs, Job{
 			task: func() {

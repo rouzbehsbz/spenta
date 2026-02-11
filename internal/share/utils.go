@@ -1,4 +1,4 @@
-package internal
+package share
 
 import "runtime"
 

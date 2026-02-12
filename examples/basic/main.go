@@ -11,7 +11,7 @@ func main() {
 
 	parIter := iter.SliceParMap(&arr, func(i int, v int) int {
 		return v * 2
-	}, iter.WithMinChunkSize(1))
+	}, iter.WithMaxChunkSize(3))
 
 	_ = parIter.Wait()
 

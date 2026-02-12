@@ -9,7 +9,7 @@ import (
 func NewSliceParIter[V any](slice *[]V, cb func(i int, v V), opts ...ParIterOptions) *ParIter {
 	options := BuildParIterOptions(opts)
 
-	sLen, chunkSize, chunkCount := SliceChunk(slice, options.MinChunkSize)
+	sLen, chunkSize, chunkCount := SliceChunk(slice, options.MaxChunkSize)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(chunkCount)

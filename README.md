@@ -49,5 +49,5 @@ You can pass optional configurations to override the defaults as needed.
 // Default min chunk size is 512. You can change it based on your needs.
 parIter := iter.SliceParFilter(&arr, func(i int,  v int) bool {
 	return v%2 == 0
-}, iter.WithMinChunkSize(20))
+}, iter.WithMaxChunkSize(20))
 ```

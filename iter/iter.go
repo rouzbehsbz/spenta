@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-const MIN_CHUNK_SIZE uint = 512
+const MAX_CHUNK_SIZE uint = 512
 
 type ParIter struct {
 	errors []error
@@ -34,18 +34,18 @@ func (p *ParIter) Wait() error {
 }
 
 type ParIterOptions struct {
-	MinChunkSize uint
+	MaxChunkSize uint
 }
 
 func DefaultParIterOptions() *ParIterOptions {
 	return &ParIterOptions{
-		MinChunkSize: MIN_CHUNK_SIZE,
+		MaxChunkSize: MAX_CHUNK_SIZE,
 	}
 }
 
-func WithMinChunkSize(size uint) ParIterOptions {
+func WithMaxChunkSize(size uint) ParIterOptions {
 	return ParIterOptions{
-		MinChunkSize: size,
+		MaxChunkSize: size,
 	}
 }
 
@@ -53,7 +53,7 @@ func BuildParIterOptions(opts []ParIterOptions) ParIterOptions {
 	o := DefaultParIterOptions()
 
 	for _, opt := range opts {
-		o.MinChunkSize = opt.MinChunkSize
+		o.MaxChunkSize = opt.MaxChunkSize
 	}
 
 	return *o
@@ -72,9 +72,9 @@ func ChunkCount(len, chunkSize int) int {
 	return (len + chunkSize - 1) / chunkSize
 }
 
-func SliceChunk[V any](slice *[]V, minChunkSize uint) (int, int, int) {
+func SliceChunk[V any](slice *[]V, maxChunkSize uint) (int, int, int) {
 	len := len((*slice))
-	chunkSize := ChunkSize(len, minChunkSize)
+	chunkSize := ChunkSize(len, maxChunkSize)
 	chunkCount := ChunkCount(len, chunkSize)
 
 	return len, chunkSize, chunkCount

@@ -1,15 +1,36 @@
 package iter
 
-import "sync"
+import (
+	"errors"
+	"sync"
+)
 
 const MIN_CHUNK_SIZE uint = 512
 
 type ParIter struct {
-	wg *sync.WaitGroup
+	errors []error
+
+	wg    *sync.WaitGroup
+	errCh chan error
 }
 
-func (p *ParIter) Done() {
+func NewParIter(wg *sync.WaitGroup, errCh chan error) *ParIter {
+	return &ParIter{
+		errors: []error{},
+		wg:     wg,
+		errCh:  errCh,
+	}
+}
+
+func (p *ParIter) Wait() error {
 	p.wg.Wait()
+
+	close(p.errCh)
+	for err := range p.errCh {
+		p.errors = append(p.errors, err)
+	}
+
+	return errors.Join(p.errors...)
 }
 
 type ParIterOptions struct {
@@ -39,19 +60,19 @@ func BuildParIterOptions(opts []ParIterOptions) ParIterOptions {
 }
 
 func ChunkSize(len int, minSize uint) int {
-	size := (len + 1) / 2
-	if size > int(minSize) {
-		return ChunkSize(size, minSize)
+	if len > int(minSize) {
+		len = (len + 1) / 2
+		return ChunkSize(len, minSize)
 	}
 
-	return size
+	return len
 }
 
 func ChunkCount(len, chunkSize int) int {
 	return (len + chunkSize - 1) / chunkSize
 }
 
-func SliceChunk[T comparable](slice *[]T, minChunkSize uint) (int, int, int) {
+func SliceChunk[V any](slice *[]V, minChunkSize uint) (int, int, int) {
 	len := len((*slice))
 	chunkSize := ChunkSize(len, minChunkSize)
 	chunkCount := ChunkCount(len, chunkSize)

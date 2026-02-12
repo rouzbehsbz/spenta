@@ -7,13 +7,13 @@ import (
 )
 
 func main() {
-	arr := []int{1, 2, 3, 4, 5, 6}
+	arr := []int{1, 2, 3, 4, 5}
 
-	parIter := iter.SliceParMap(&arr, func(a int) int {
-		return a * 2
-	}, iter.WithMinChunkSize(20))
+	parIter := iter.SliceParMap(&arr, func(i int, v int) int {
+		return v * 2
+	}, iter.WithMinChunkSize(1))
 
-	parIter.Done()
+	_ = parIter.Wait()
 
 	fmt.Println(arr)
 }

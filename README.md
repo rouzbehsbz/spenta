@@ -17,7 +17,7 @@ parIter := iter.SliceParMap(&arr, func(a int) int  {
 	return a * 2
 })
 
-parIter.Done()
+_ = parIter.Wait()
 ```
 
 ## Overview
@@ -27,6 +27,7 @@ spenta divides the original task into multiple subtasks, each performing computa
 - Automatically spawns workers based on CPU cores.
 - Supports common operations like `forEach`, `map`, and others.
 - Type-safe closures using Go’s generics.
+- Capture errors while allowing other tasks to continue
 
 ## Iterator Oprations
 | Operation | Slice | Map |

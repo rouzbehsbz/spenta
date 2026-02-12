@@ -1,6 +1,7 @@
 package pool
 
 import (
+	"fmt"
 	"runtime"
 	"sync"
 )
@@ -39,6 +40,21 @@ func (p *Pool) SendJobs(jobs []Job) {
 
 func (p *Pool) worker() {
 	for job := range p.jobs {
-		job.task()
+		func(j Job) {
+			defer p.onJobEnd(j)
+			j.task()
+		}(job)
 	}
+}
+
+func (p *Pool) onJobEnd(job Job) {
+	if r := recover(); r != nil {
+		//TODO: maybe we can produce better errors
+		job.errCh <- fmt.Errorf("%v", r)
+
+		// TODO: need to spawn a new worker after the last one dies
+		// but we should ensure its safe and wont spawn infinitely
+	}
+
+	job.wg.Done()
 }

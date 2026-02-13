@@ -1,11 +1,11 @@
 # Roadmap
 
 ## v1.0.0
-- Supported parallel iterator operations:
+- [x] Supported parallel iterator operations:
   - `forEach`
   - `map`
   - `filter`
-- Support parallel iterator for `map[K]V` type
+- [x] Support parallel iterator for `map[K]V` type
 - Support parallel iterator for `string` type
 - Add tests and integrate with CI
 - Add benchmarks for the library itself

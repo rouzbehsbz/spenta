@@ -32,10 +32,8 @@ func SpentaPool() *Pool {
 	return _pool
 }
 
-func (p *Pool) SendJobs(jobs []Job) {
-	for _, job := range jobs {
-		p.jobs <- job
-	}
+func (p *Pool) SendJob(job Job) {
+	p.jobs <- job
 }
 
 func (p *Pool) worker() {

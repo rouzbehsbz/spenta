@@ -1,26 +1,20 @@
 package iter
 
 import (
-	"sync"
-
 	"github.com/rouzbehsbz/spenta/pool"
 )
 
 func NewSliceParIter[V any](slice *[]V, cb func(i int, v V), opts ...ParIterOptions) *ParIter {
 	options := BuildParIterOptions(opts)
+	length := len(*slice)
 
-	sLen, chunkSize, chunkCount := SliceChunk(slice, options.MaxChunkSize)
+	parIter := NewParIter()
 
-	wg := &sync.WaitGroup{}
-	wg.Add(chunkCount)
-
-	jobs, errCh := pool.NewSliceJobs(sLen, chunkCount, chunkSize, wg, func(i int) {
+	pool.SpawnJob(0, length, int(options.MaxChunkSize), parIter.wg, parIter.errCh, func(i int) {
 		cb(i, (*slice)[i])
 	})
 
-	go pool.SpentaPool().SendJobs(jobs)
-
-	return NewParIter(wg, errCh)
+	return parIter
 }
 
 func SliceParForEach[V any](slice *[]V, cb func(i int, v V), opts ...ParIterOptions) *ParIter {

@@ -11,30 +11,35 @@ type Job struct {
 	errCh chan error
 }
 
-func NewSliceJobs(len, chunkCount, chunkSize int, wg *sync.WaitGroup, cb func(i int)) ([]Job, chan error) {
-	jobs := make([]Job, 0, chunkCount)
-	errCh := make(chan error, chunkCount)
-
-	for chunk := range chunkCount {
-		start, end := ChunkIndexes(chunk, len, chunkSize)
-
-		jobs = append(jobs, Job{
-			task: func() {
-				for i := start; i < end; i++ {
-					cb(i)
-				}
-			},
-			wg:    wg,
-			errCh: errCh,
-		})
+func NewJob(task func(), wg *sync.WaitGroup, errCh chan error) Job {
+	return Job{
+		task:  task,
+		wg:    wg,
+		errCh: errCh,
 	}
-
-	return jobs, errCh
 }
 
-func ChunkIndexes(chunkIdx, len, chunkSize int) (int, int) {
-	start := chunkIdx * chunkSize
-	end := min(start+chunkSize, len)
+func SpawnJob(start, end, maxChunkSize int, wg *sync.WaitGroup, errCh chan error, cb func(i int)) {
+	length := end - start
+	if length > maxChunkSize {
+		mid := start + length/2
 
-	return start, end
+		// TODO: Maybe we can improve performance by calling
+		// them inside goroutines, but we must ensure that
+		// sync.WaitGroup is incremented safely before
+		// parIter.Wait() is called.
+		SpawnJob(start, mid, maxChunkSize, wg, errCh, cb)
+		SpawnJob(mid, end, maxChunkSize, wg, errCh, cb)
+		return
+	}
+
+	wg.Add(1)
+
+	job := NewJob(func() {
+		for i := start; i < end; i++ {
+			cb(i)
+		}
+	}, wg, errCh)
+
+	SpentaPool().SendJob(job)
 }

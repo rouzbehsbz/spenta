@@ -24,9 +24,9 @@ _ = parIter.Wait()
 spenta divides the original task into multiple subtasks, each performing computation over a portion of the original data. It returns the results exactly as a sequential execution would, but Spenta does it in parallel using multiple goroutines.
 
 - Completely lock-free algorithms
-- Automatically spawns workers based on CPU cores.
-- Supports common operations like `forEach`, `map`, and others.
-- Type-safe closures using Go’s generics.
+- Automatically spawns workers based on CPU cores
+- Supports common operations like `forEach`, `map`, and others
+- Type-safe closures using Go’s generics
 - Capture errors while allowing other tasks to continue
 
 ## Iterator Oprations
@@ -39,8 +39,7 @@ spenta divides the original task into multiple subtasks, each performing computa
 |`find`|❌ | ❌ |
 
 ## Optimizations
-
-- Dynamic chunking algorithm based on workload.
+- Adaptive binary divide-and-conquer chunking for balanced parallel execution.
 
 ## Optional Configurations
 You can pass optional configurations to override the defaults as needed.

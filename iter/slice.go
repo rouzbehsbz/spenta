@@ -1,6 +1,8 @@
 package iter
 
 import (
+	"sync"
+
 	"github.com/rouzbehsbz/spenta/pool"
 )
 
@@ -30,15 +32,33 @@ func SliceParMap[V any](slice *[]V, cb func(i int, v V) V, opts ...ParIterOption
 }
 
 func SliceParFilter[V any](slice *[]V, cb func(i int, v V) bool, opts ...ParIterOptions) *ParIter {
-	return NewSliceParIter[V](slice, func(i int, v V) {
+	options := BuildParIterOptions(opts)
+	input := append([]V(nil), (*slice)...)
+	length := len(input)
+	keep := make([]bool, length)
+
+	parIter := NewParIter()
+	predicateWG := &sync.WaitGroup{}
+
+	pool.SpawnJob(0, length, int(options.MaxChunkSize), int(options.MinChunkSize), predicateWG, parIter.errCh, func(i int) {
+		keep[i] = cb(i, input[i])
+	})
+
+	parIter.wg.Add(1)
+	go func() {
+		defer parIter.wg.Done()
+		predicateWG.Wait()
+
 		s := *slice
 		j := 0
-		for _, v := range s {
-			if cb(i, v) {
+		for i, v := range input {
+			if keep[i] {
 				s[j] = v
 				j++
 			}
 		}
 		*slice = s[:j]
-	}, opts...)
+	}()
+
+	return parIter
 }

@@ -12,26 +12,41 @@ const (
 
 type ParIter struct {
 	errors []error
+	mu     sync.Mutex
 
 	wg    *sync.WaitGroup
 	errCh chan error
+	done  chan struct{}
 }
 
 func NewParIter() *ParIter {
-	return &ParIter{
+	p := &ParIter{
 		errors: []error{},
 		wg:     &sync.WaitGroup{},
 		errCh:  make(chan error),
+		done:   make(chan struct{}),
 	}
+
+	go func() {
+		for err := range p.errCh {
+			p.mu.Lock()
+			p.errors = append(p.errors, err)
+			p.mu.Unlock()
+		}
+		close(p.done)
+	}()
+
+	return p
 }
 
 func (p *ParIter) Wait() error {
 	p.wg.Wait()
 
 	close(p.errCh)
-	for err := range p.errCh {
-		p.errors = append(p.errors, err)
-	}
+	<-p.done
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	return errors.Join(p.errors...)
 }
@@ -64,8 +79,12 @@ func BuildParIterOptions(opts []ParIterOptions) ParIterOptions {
 	o := DefaultParIterOptions()
 
 	for _, opt := range opts {
-		o.MaxChunkSize = opt.MaxChunkSize
-		o.MinChunkSize = opt.MinChunkSize
+		if opt.MaxChunkSize > 0 {
+			o.MaxChunkSize = opt.MaxChunkSize
+		}
+		if opt.MinChunkSize > 0 {
+			o.MinChunkSize = opt.MinChunkSize
+		}
 	}
 
 	return *o

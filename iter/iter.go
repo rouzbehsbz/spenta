@@ -1,3 +1,5 @@
+// Package iter provides utilities for parallel iteration and
+// chunk-based concurrent processing.
 package iter
 
 import (
@@ -6,10 +8,16 @@ import (
 )
 
 const (
+	// MinChunkSize is the minimum chunk size for
+	// parallel processing.
 	MinChunkSize uint = 256
+
+	// MinChunkSize is the maximum chunk size for
+	// parallel processing.
 	MaxChunkSize uint = 4096
 )
 
+// ParIter coordinates parallel job execution and error aggregation.
 type ParIter struct {
 	jobsWg *sync.WaitGroup
 	errors []error
@@ -21,6 +29,7 @@ type ParIter struct {
 	doneOnce sync.Once
 }
 
+// NewParIter creates and initializes a new ParIter.
 func NewParIter() *ParIter {
 	p := &ParIter{
 		errors:         []error{},
@@ -45,6 +54,10 @@ func NewParIter() *ParIter {
 	return p
 }
 
+// Wait blocks until all jobs have completed and any
+// post-job processing has finished.
+// It returns a single error composed using errors.Join. If no
+// errors were reported, it returns nil.
 func (p *ParIter) Wait() error {
 	p.doneOnce.Do(func() {
 		<-p.jobsDoneCh
@@ -55,15 +68,19 @@ func (p *ParIter) Wait() error {
 	return errors.Join(p.errors...)
 }
 
+// postJobsDone signals that all post-job processing has completed.
 func (p *ParIter) postJobsDone() {
 	close(p.postJobsDoneCh)
 }
 
+// ParIterOptions configures behavior for parallel iteration.
 type ParIterOptions struct {
 	MaxChunkSize uint
 	MinChunkSize uint
 }
 
+// Returns a ParIterOptions instance populated with
+// default values.
 func DefaultParIterOptions() *ParIterOptions {
 	return &ParIterOptions{
 		MaxChunkSize: MaxChunkSize,
@@ -71,18 +88,24 @@ func DefaultParIterOptions() *ParIterOptions {
 	}
 }
 
+// Returns an option that overrides the minimum
+// chunk size for parallel processing.
 func WithMinChunkSize(size uint) ParIterOptions {
 	return ParIterOptions{
 		MinChunkSize: size,
 	}
 }
 
+// Returns an option that overrides the maximum
+// chunk size for parallel processing.
 func WithMaxChunkSize(size uint) ParIterOptions {
 	return ParIterOptions{
 		MaxChunkSize: size,
 	}
 }
 
+// Merges multiple ParIterOptions into a single
+// configuration instance.
 func BuildParIterOptions(opts []ParIterOptions) ParIterOptions {
 	o := DefaultParIterOptions()
 

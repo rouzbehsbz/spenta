@@ -4,30 +4,39 @@ import (
 	"sync"
 )
 
-type Job struct {
+// Represents a unit of work executed by the worker pool.
+type job struct {
 	task func()
 
 	jobsWg *sync.WaitGroup
 	errCh  chan error
 }
 
-func NewJob(task func(), jobsWg *sync.WaitGroup, errCh chan error) Job {
-	return Job{
+// Creates a new Job instance.
+func newJob(task func(), jobsWg *sync.WaitGroup, errCh chan error) job {
+	return job{
 		task:   task,
 		jobsWg: jobsWg,
 		errCh:  errCh,
 	}
 }
 
-func SpawnJob(start, end, maxChunkSize, minChunkSize int, jobsWg *sync.WaitGroup, errCh chan error, cb func(start, end int)) {
+// Recursively splits a workload into smaller chunks and
+// submits them to the worker pool based on binary tree conquer and divide.
+func SpawnJob(
+	start,
+	end,
+	maxChunkSize,
+	minChunkSize int,
+	jobsWg *sync.WaitGroup,
+	errCh chan error,
+	cb func(start, end int),
+) {
 	length := end - start
+
 	if length > maxChunkSize && length/2 >= minChunkSize {
 		mid := start + length/2
 
-		// TODO: Maybe we can improve performance by calling
-		// them inside goroutines, but we must ensure that
-		// sync.WaitGroup is incremented safely before
-		// parIter.Wait() is called.
 		SpawnJob(start, mid, maxChunkSize, minChunkSize, jobsWg, errCh, cb)
 		SpawnJob(mid, end, maxChunkSize, minChunkSize, jobsWg, errCh, cb)
 		return
@@ -35,7 +44,7 @@ func SpawnJob(start, end, maxChunkSize, minChunkSize int, jobsWg *sync.WaitGroup
 
 	jobsWg.Add(1)
 
-	job := NewJob(func() {
+	job := newJob(func() {
 		cb(start, end)
 	}, jobsWg, errCh)
 

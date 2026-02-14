@@ -2,6 +2,7 @@ package iter
 
 import "github.com/rouzbehsbz/spenta/pool"
 
+// Creates a ParIter for processing a map in parallel.
 func NewMapParIter[K comparable, V any](Map *map[K]V, cb func(start, end int, keys []K), opts ...ParIterOptions) *ParIter {
 	options := BuildParIterOptions(opts)
 	length := len(*Map)
@@ -20,6 +21,8 @@ func NewMapParIter[K comparable, V any](Map *map[K]V, cb func(start, end int, ke
 	return parIter
 }
 
+// Applies the given callback function to each
+// key, value of the map in parallel.
 func MapParForEach[K comparable, V any](Map *map[K]V, cb func(k K, v V), opts ...ParIterOptions) *ParIter {
 	p := NewMapParIter[K, V](Map, func(start, end int, keys []K) {
 		for i := start; i < end; i++ {
@@ -34,6 +37,8 @@ func MapParForEach[K comparable, V any](Map *map[K]V, cb func(k K, v V), opts ..
 	return p
 }
 
+// Applies the given transformation function to each key
+// of the map in parallel and replaces each key with the returned value.
 func MapParMap[K comparable, V any](Map *map[K]V, cb func(k K, v V) V, opts ...ParIterOptions) *ParIter {
 	p := NewMapParIter[K, V](Map, func(start, end int, keys []K) {
 		for i := start; i < end; i++ {
@@ -48,6 +53,8 @@ func MapParMap[K comparable, V any](Map *map[K]V, cb func(k K, v V) V, opts ...P
 	return p
 }
 
+// Filters the map in parallel according to the
+// provided predicate function.
 func MapParFilter[K comparable, V any](Map *map[K]V, cb func(k K, v V) bool, opts ...ParIterOptions) *ParIter {
 	p := NewMapParIter[K, V](Map, func(start, end int, keys []K) {
 		for i := start; i < end; i++ {

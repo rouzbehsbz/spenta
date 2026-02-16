@@ -1,6 +1,10 @@
 package iter
 
-import "github.com/rouzbehsbz/spenta/pool"
+import (
+	"sync"
+
+	"github.com/rouzbehsbz/spenta/pool"
+)
 
 // Creates a ParIter for processing a map in parallel.
 func NewMapParIter[K comparable, V any](Map *map[K]V, cb func(start, end int, keys []K), opts ...ParIterOptions) *ParIter {
@@ -17,6 +21,7 @@ func NewMapParIter[K comparable, V any](Map *map[K]V, cb func(start, end int, ke
 	pool.SpawnJob(0, length, int(options.MaxChunkSize), int(options.MinChunkSize), parIter.jobsWg, parIter.errCh, func(start, end int) {
 		cb(start, end, keys)
 	})
+	parIter.startJobsDoneWatcher()
 
 	return parIter
 }
@@ -69,4 +74,58 @@ func MapParFilter[K comparable, V any](Map *map[K]V, cb func(k K, v V) bool, opt
 	p.postJobsDone()
 
 	return p
+}
+
+// Finds a matching key/value in the map in parallel.
+// Because Go map iteration order is non-deterministic, the selected
+// match is not guaranteed across runs when multiple keys match.
+func MapParFind[K comparable, V any](Map *map[K]V, cb func(k K, v V) bool, opts ...ParIterOptions) *MapFindResult[K, V] {
+	type localMatch struct {
+		pos   int
+		key   K
+		value V
+	}
+
+	matches := make([]localMatch, 0)
+	mu := &sync.Mutex{}
+
+	p := NewMapParIter[K, V](Map, func(start, end int, keys []K) {
+		for i := start; i < end; i++ {
+			key := keys[i]
+			value := (*Map)[key]
+
+			if cb(key, value) {
+				mu.Lock()
+				matches = append(matches, localMatch{
+					pos:   i,
+					key:   key,
+					value: value,
+				})
+				mu.Unlock()
+				return
+			}
+		}
+	}, opts...)
+
+	result := &MapFindResult[K, V]{
+		ParIter: p,
+	}
+
+	go func() {
+		<-p.jobsDoneCh
+
+		best := 0
+		for i := range matches {
+			if !result.found || matches[i].pos < matches[best].pos {
+				best = i
+				result.found = true
+				result.key = matches[i].key
+				result.value = matches[i].value
+			}
+		}
+
+		p.postJobsDone()
+	}()
+
+	return result
 }

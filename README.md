@@ -35,8 +35,8 @@ spenta divides the original task into multiple subtasks, each performing computa
 |`forEach`|✅ |✅ |
 |`map`|✅ |✅ |
 |`filter`|✅ |✅ |
+|`find`|✅ | ✅ |
 |`reduce`|❌ | ❌ |
-|`find`|❌ | ❌ |
 
 ## Optimizations
 - Adaptive binary divide-and-conquer chunking for balanced parallel execution.

@@ -24,6 +24,7 @@ func newSliceParIter[V any](slice *[]V, cb func(start, end int), opts ...ParIter
 			cb(start, end)
 		},
 	)
+	parIter.startJobsDoneWatcher()
 
 	return parIter
 }
@@ -85,4 +86,52 @@ func SliceParFilter[V any](slice *[]V, cb func(i int, v V) bool, opts ...ParIter
 	}()
 
 	return p
+}
+
+// Finds the first matching element in the slice in parallel.
+// It returns the same result as sequential execution would,
+// based on the smallest matching index.
+func SliceParFind[V any](slice *[]V, cb func(i int, v V) bool, opts ...ParIterOptions) *SliceFindResult[V] {
+	type localMatch struct {
+		index int
+		value V
+	}
+
+	matches := make([]localMatch, 0)
+	mu := &sync.Mutex{}
+
+	p := newSliceParIter[V](slice, func(start, end int) {
+		for i := start; i < end; i++ {
+			if cb(i, (*slice)[i]) {
+				mu.Lock()
+				matches = append(matches, localMatch{
+					index: i,
+					value: (*slice)[i],
+				})
+				mu.Unlock()
+				return
+			}
+		}
+	}, opts...)
+
+	result := &SliceFindResult[V]{
+		ParIter: p,
+		index:   -1,
+	}
+
+	go func() {
+		<-p.jobsDoneCh
+
+		for _, match := range matches {
+			if !result.found || match.index < result.index {
+				result.found = true
+				result.index = match.index
+				result.value = match.value
+			}
+		}
+
+		p.postJobsDone()
+	}()
+
+	return result
 }

@@ -23,6 +23,7 @@ type ParIter struct {
 	errors []error
 
 	errCh          chan error
+	errDoneCh      chan struct{}
 	jobsDoneCh     chan struct{}
 	postJobsDoneCh chan struct{}
 
@@ -34,6 +35,7 @@ func NewParIter() *ParIter {
 	p := &ParIter{
 		errors:         []error{},
 		jobsWg:         &sync.WaitGroup{},
+		errDoneCh:      make(chan struct{}),
 		jobsDoneCh:     make(chan struct{}),
 		postJobsDoneCh: make(chan struct{}),
 		errCh:          make(chan error),
@@ -44,11 +46,7 @@ func NewParIter() *ParIter {
 		for err := range p.errCh {
 			p.errors = append(p.errors, err)
 		}
-	}()
-
-	go func() {
-		p.jobsWg.Wait()
-		close(p.jobsDoneCh)
+		close(p.errDoneCh)
 	}()
 
 	return p
@@ -63,6 +61,7 @@ func (p *ParIter) Wait() error {
 		<-p.jobsDoneCh
 		<-p.postJobsDoneCh
 		close(p.errCh)
+		<-p.errDoneCh
 	})
 
 	return errors.Join(p.errors...)
@@ -71,6 +70,15 @@ func (p *ParIter) Wait() error {
 // postJobsDone signals that all post-job processing has completed.
 func (p *ParIter) postJobsDone() {
 	close(p.postJobsDoneCh)
+}
+
+// startJobsDoneWatcher starts a waiter that closes jobsDoneCh
+// when all queued jobs have completed.
+func (p *ParIter) startJobsDoneWatcher() {
+	go func() {
+		p.jobsWg.Wait()
+		close(p.jobsDoneCh)
+	}()
 }
 
 // ParIterOptions configures behavior for parallel iteration.

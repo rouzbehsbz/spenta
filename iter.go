@@ -1,6 +1,4 @@
-// Package iter provides utilities for parallel iteration and
-// chunk-based concurrent processing.
-package iter
+package spenta
 
 import (
 	"errors"
@@ -10,11 +8,11 @@ import (
 const (
 	// MinChunkSize is the minimum chunk size for
 	// parallel processing.
-	MinChunkSize uint = 256
+	minChunkSize uint = 256
 
 	// MinChunkSize is the maximum chunk size for
 	// parallel processing.
-	MaxChunkSize uint = 4096
+	maxChunkSize uint = 4096
 )
 
 // ParIter coordinates parallel job execution and error aggregation.
@@ -30,7 +28,7 @@ type ParIter struct {
 }
 
 // NewParIter creates and initializes a new ParIter.
-func NewParIter() *ParIter {
+func newParIter() *ParIter {
 	p := &ParIter{
 		errors:         []error{},
 		jobsWg:         &sync.WaitGroup{},
@@ -83,8 +81,8 @@ type ParIterOptions struct {
 // default values.
 func DefaultParIterOptions() *ParIterOptions {
 	return &ParIterOptions{
-		MaxChunkSize: MaxChunkSize,
-		MinChunkSize: MinChunkSize,
+		MaxChunkSize: maxChunkSize,
+		MinChunkSize: minChunkSize,
 	}
 }
 

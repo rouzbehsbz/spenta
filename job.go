@@ -1,4 +1,4 @@
-package pool
+package spenta
 
 import (
 	"sync"
@@ -23,7 +23,7 @@ func newJob(task func(), jobsWg *sync.WaitGroup, errCh chan error) job {
 
 // Recursively splits a workload into smaller chunks and
 // submits them to the worker pool based on binary tree conquer and divide.
-func SpawnJob(
+func spawnJob(
 	start,
 	end,
 	maxChunkSize,
@@ -37,8 +37,8 @@ func SpawnJob(
 	if length > maxChunkSize && length/2 >= minChunkSize {
 		mid := start + length/2
 
-		SpawnJob(start, mid, maxChunkSize, minChunkSize, jobsWg, errCh, cb)
-		SpawnJob(mid, end, maxChunkSize, minChunkSize, jobsWg, errCh, cb)
+		spawnJob(start, mid, maxChunkSize, minChunkSize, jobsWg, errCh, cb)
+		spawnJob(mid, end, maxChunkSize, minChunkSize, jobsWg, errCh, cb)
 		return
 	}
 
@@ -48,5 +48,5 @@ func SpawnJob(
 		cb(start, end)
 	}, jobsWg, errCh)
 
-	SpentaPool().SendJob(job)
+	spentaPool().sendJob(job)
 }

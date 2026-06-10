@@ -3,17 +3,17 @@ package main
 import (
 	"fmt"
 
-	"github.com/rouzbehsbz/spenta/iter"
+	"github.com/rouzbehsbz/spenta"
 )
 
 func main() {
 	arr := []int{1, 2, 3, 4, 5}
 
-	parIter := iter.SliceParMap(&arr, func(i int, v int) int {
+	parIter := spenta.SliceParMap(arr, func(i int, v int) int {
 		return v * 2
 	},
-		iter.WithMaxChunkSize(4),
-		iter.WithMinChunkSize(2),
+		spenta.WithMaxChunkSize(4),
+		spenta.WithMinChunkSize(2),
 	)
 
 	_ = parIter.Wait()
